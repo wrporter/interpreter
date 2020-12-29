@@ -14,7 +14,7 @@ func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
 	for {
-		_, _ = fmt.Fprintf(out, PROMPT)
+		fmt.Fprintf(out, PROMPT)
 		scanned := scanner.Scan()
 		if !scanned {
 			return
@@ -26,16 +26,16 @@ func Start(in io.Reader, out io.Writer) {
 
 		program := p.ParseProgram()
 		if len(p.Errors()) != 0 {
-			printParseErrors(out, p.Errors())
+			printParserErrors(out, p.Errors())
 			continue
 		}
 
-		_, _ = io.WriteString(out, program.String())
-		_, _ = io.WriteString(out, "\n")
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
 	}
 }
 
-const monkeyFace = `            __,__
+const MONKEY_FACE = `            __,__
    .--.  .-"     "-.  .--.
   / .. \/  .-. .-.  \/ .. \
  | |  '|  /   Y   \  |'  | |
@@ -48,11 +48,11 @@ const monkeyFace = `            __,__
            '-----'
 `
 
-func printParseErrors(out io.Writer, errors []string) {
-	_, _ = io.WriteString(out, monkeyFace)
-	_, _ = io.WriteString(out, "Woops! We ran into some monkey business here!\n")
-	_, _ = io.WriteString(out, " parser errors:\n")
+func printParserErrors(out io.Writer, errors []string) {
+	io.WriteString(out, MONKEY_FACE)
+	io.WriteString(out, "Woops! We ran into some monkey business here!\n")
+	io.WriteString(out, " parser errors:\n")
 	for _, msg := range errors {
-		_, _ = io.WriteString(out, "\t"+msg+"\n")
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
