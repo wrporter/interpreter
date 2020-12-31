@@ -120,6 +120,7 @@ func TestReturnStatements(t *testing.T) {
 		{"return 10; 9;", 10},
 		{"return 2 * 5; 9;", 10},
 		{"9; return 2 * 5; 9;", 10},
+		{"if (10 > 1) { return 10; }", 10},
 		{
 			`
 if (10 > 1) {
@@ -131,6 +132,25 @@ if (10 > 1) {
 }
 `,
 			10,
+		},
+		{
+			`
+let f = fn(x) {
+  return x;
+  x + 10;
+};
+f(10);`,
+			10,
+		},
+		{
+			`
+let f = fn(x) {
+   let result = x + 10;
+   return result;
+   return 10;
+};
+f(10);`,
+			20,
 		},
 	}
 
@@ -159,6 +179,10 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"true + false;",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"true + false + true + false;",
 			"unknown operator: BOOLEAN + BOOLEAN",
 		},
 		{
@@ -263,38 +287,21 @@ func TestFunctionApplication(t *testing.T) {
 	}
 }
 
-func TestClosures(t *testing.T) {
+func TestEnclosingEnvironments(t *testing.T) {
 	input := `
-let newAdder = fn(x) {
-  fn(y) { x + y };
+let first = 10;
+let second = 10;
+let third = 10;
+
+let ourFunction = fn(first) {
+  let second = 20;
+
+  first + second + third;
 };
 
-let addTwo = newAdder(2);
-addTwo(2);`
+ourFunction(20) + first + second;`
 
-	testIntegerObject(t, testEval(input), 4)
-}
-
-func testNullObject(t *testing.T, obj object.Object) bool {
-	if obj != NULL {
-		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
-		return false
-	}
-	return true
-}
-
-func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
-	result, ok := obj.(*object.Boolean)
-	if !ok {
-		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
-		return false
-	}
-	if result.Value != expected {
-		t.Errorf("object has wrong value. got=%t, want=%t",
-			result.Value, expected)
-		return false
-	}
-	return true
+	testIntegerObject(t, testEval(input), 70)
 }
 
 func testEval(input string) object.Object {
@@ -318,5 +325,27 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 		return false
 	}
 
+	return true
+}
+
+func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
+	result, ok := obj.(*object.Boolean)
+	if !ok {
+		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%t, want=%t",
+			result.Value, expected)
+		return false
+	}
+	return true
+}
+
+func testNullObject(t *testing.T, obj object.Object) bool {
+	if obj != NULL {
+		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
+		return false
+	}
 	return true
 }

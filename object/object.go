@@ -10,12 +10,15 @@ import (
 type ObjectType string
 
 const (
-	INTEGER_OBJ      = "INTEGER"
-	BOOLEAN_OBJ      = "BOOLEAN"
-	NULL_OBJ         = "NULL"
+	NULL_OBJ  = "NULL"
+	ERROR_OBJ = "ERROR"
+
+	INTEGER_OBJ = "INTEGER"
+	BOOLEAN_OBJ = "BOOLEAN"
+
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
-	ERROR_OBJ        = "ERROR"
-	FUNCTION_OBJ     = "FUNCTION"
+
+	FUNCTION_OBJ = "FUNCTION"
 )
 
 type Object interface {
@@ -27,13 +30,8 @@ type Integer struct {
 	Value int64
 }
 
-func (i *Integer) Type() ObjectType {
-	return INTEGER_OBJ
-}
-
-func (i *Integer) Inspect() string {
-	return fmt.Sprintf("%d", i.Value)
-}
+func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 
 type Boolean struct {
 	Value bool
@@ -60,35 +58,6 @@ type Error struct {
 
 func (e *Error) Type() ObjectType { return ERROR_OBJ }
 func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
-
-func NewEnclosedEnvironment(outer *Environment) *Environment {
-	env := NewEnvironment()
-	env.outer = outer
-	return env
-}
-
-func NewEnvironment() *Environment {
-	s := make(map[string]Object)
-	return &Environment{store: s, outer: nil}
-}
-
-type Environment struct {
-	store map[string]Object
-	outer *Environment
-}
-
-func (e *Environment) Get(name string) (Object, bool) {
-	obj, ok := e.store[name]
-	if !ok && e.outer != nil {
-		obj, ok = e.outer.Get(name)
-	}
-	return obj, ok
-}
-
-func (e *Environment) Set(name string, val Object) Object {
-	e.store[name] = val
-	return val
-}
 
 type Function struct {
 	Parameters []*ast.Identifier
