@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+type BuiltinFunction func(args ...Object) Object
+
 type ObjectType string
 
 const (
@@ -17,24 +19,28 @@ const (
 	INTEGER_OBJ = "INTEGER"
 	BOOLEAN_OBJ = "BOOLEAN"
 	STRING_OBJ  = "STRING"
-	ARRAY_OBJ   = "ARRAY"
-	HASH_OBJ    = "HASH"
 
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 
 	FUNCTION_OBJ = "FUNCTION"
+	BUILTIN_OBJ  = "BUILTIN"
 
-	BUILTIN_OBJ = "BUILTIN"
+	ARRAY_OBJ = "ARRAY"
+	HASH_OBJ  = "HASH"
 )
-
-type Object interface {
-	Type() ObjectType
-	Inspect() string
-}
 
 type HashKey struct {
 	Type  ObjectType
 	Value uint64
+}
+
+type Hashable interface {
+	HashKey() HashKey // TODO: Cache hash key functions.
+}
+
+type Object interface {
+	Type() ObjectType
+	Inspect() string
 }
 
 type Integer struct {
@@ -63,20 +69,6 @@ func (b *Boolean) HashKey() HashKey {
 	}
 
 	return HashKey{Type: b.Type(), Value: value}
-}
-
-type String struct {
-	Value string
-}
-
-func (s *String) Type() ObjectType { return STRING_OBJ }
-func (s *String) Inspect() string  { return s.Value }
-func (s *String) HashKey() HashKey {
-	// TODO: Potential for collisions. Can we do better? Will Java's String hashCode algorithm work?
-	h := fnv.New64a()
-	h.Write([]byte(s.Value))
-
-	return HashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
 type Null struct{}
@@ -123,7 +115,19 @@ func (f *Function) Inspect() string {
 	return out.String()
 }
 
-type BuiltinFunction func(args ...Object) Object
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType { return STRING_OBJ }
+func (s *String) Inspect() string  { return s.Value }
+func (s *String) HashKey() HashKey {
+	// TODO: Potential for collisions. Can we do better? Will Java's String hashCode algorithm work?
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
 
 type Builtin struct {
 	Fn BuiltinFunction
@@ -159,10 +163,6 @@ type HashPair struct {
 
 type Hash struct {
 	Pairs map[HashKey]HashPair
-}
-
-type Hashable interface {
-	HashKey() HashKey // TODO: Cache hash key functions.
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }
