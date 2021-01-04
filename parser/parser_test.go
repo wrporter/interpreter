@@ -936,6 +936,45 @@ func TestParsingHashLiteralsWithExpressions(t *testing.T) {
 	}
 }
 
+func TestProperties(t *testing.T) {
+	input := `"a".length()`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.PropertyExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.PropertyExpression. got=%T",
+			stmt.Expression)
+	}
+
+	prop, ok := exp.Property.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("exp.Property is not ast.CallExpression. got=%T", exp.Property)
+	}
+
+	if !testIdentifier(t, prop.Function, "length") {
+		return
+	}
+
+	if len(prop.Arguments) != 0 {
+		t.Fatalf("wrong length of arguments. got=%d", len(prop.Arguments))
+	}
+}
+
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())

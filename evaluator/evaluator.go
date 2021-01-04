@@ -93,6 +93,14 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
 		return applyFunction(function, args)
 
+	case *ast.PropertyExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+
+		return applyProperty(left, node.Property, env)
+
 	case *ast.ArrayLiteral:
 		elements := evalExpressions(node.Elements, env)
 		if len(elements) == 1 && isError(elements[0]) {
@@ -349,6 +357,35 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 
 	default:
 		return newError("not a function: %s", fn.Type())
+	}
+}
+
+func applyProperty(element object.Object, property ast.Expression, env *object.Environment) object.Object {
+	switch obj := element.(type) {
+
+	case object.PropertyObject:
+		switch property := property.(type) {
+
+		case *ast.CallExpression:
+			if ident, ok := property.Function.(*ast.Identifier); ok {
+				name := ident.Value
+
+				if propFn, ok := obj.Properties()[name]; ok {
+					args := evalExpressions(property.Arguments, env)
+					if len(args) == 1 && isError(args[0]) {
+						return args[0]
+					}
+					return propFn(obj, args...)
+				}
+			}
+			return newError("%s is not a function of %s", property.String(), obj.Type())
+
+		default:
+			return newError("%s is not a property of %s", property.String(), obj.Type())
+		}
+
+	default:
+		return newError("%s has no properties", element.Type())
 	}
 }
 

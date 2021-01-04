@@ -30,6 +30,8 @@ const (
 	SEMICOLON = ";"
 	COLON     = ":"
 
+	DOT = "."
+
 	LPAREN   = "("
 	RPAREN   = ")"
 	LBRACE   = "{"

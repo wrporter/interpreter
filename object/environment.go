@@ -1,5 +1,9 @@
 package object
 
+type BuiltinObjectFunction func(obj Object, args ...Object) Object
+
+//var GlobalEnvironment = map[string]interface{}{}
+
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer

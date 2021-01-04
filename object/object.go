@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/wrporter/monkey/ast"
-	"hash/fnv"
 	"strings"
 )
 
@@ -36,6 +35,11 @@ type HashKey struct {
 
 type Hashable interface {
 	HashKey() HashKey // TODO: Cache hash key functions.
+}
+
+type PropertyObject interface {
+	Object
+	Properties() map[string]BuiltinObjectFunction
 }
 
 type Object interface {
@@ -115,20 +119,6 @@ func (f *Function) Inspect() string {
 	return out.String()
 }
 
-type String struct {
-	Value string
-}
-
-func (s *String) Type() ObjectType { return STRING_OBJ }
-func (s *String) Inspect() string  { return s.Value }
-func (s *String) HashKey() HashKey {
-	// TODO: Potential for collisions. Can we do better? Will Java's String hashCode algorithm work?
-	h := fnv.New64a()
-	h.Write([]byte(s.Value))
-
-	return HashKey{Type: s.Type(), Value: h.Sum64()}
-}
-
 type Builtin struct {
 	Fn BuiltinFunction
 }
@@ -154,6 +144,25 @@ func (ao *Array) Inspect() string {
 	out.WriteString("]")
 
 	return out.String()
+}
+func (ao *Array) Properties() map[string]BuiltinObjectFunction {
+	return map[string]BuiltinObjectFunction{
+		"push": func(obj Object, args ...Object) Object {
+			if len(args) == 0 {
+				return ao
+			}
+
+			length := len(ao.Elements)
+
+			newElements := make([]Object, length+len(args), length+len(args))
+			copy(newElements, ao.Elements)
+			for i, element := range args {
+				newElements[length+i] = element
+			}
+
+			return &Array{Elements: newElements}
+		},
+	}
 }
 
 type HashPair struct {

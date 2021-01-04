@@ -582,6 +582,21 @@ func TestHashIndexExpressions(t *testing.T) {
 		}
 	}
 }
+
+func TestProperties(t *testing.T) {
+	input := `"".length`
+
+	evaluated := testEval(input)
+	result, ok := evaluated.(*object.Integer)
+	if !ok {
+		t.Fatalf("object is not Integer. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if result.Value != 0 {
+		t.Fatalf("value should be 0. got=%d", result.Value)
+	}
+}
+
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
